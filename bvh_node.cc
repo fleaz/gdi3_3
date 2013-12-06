@@ -1,5 +1,6 @@
 #include <limits>
 #include <stdexcept>
+#include <iostream>
 
 #include "visual.h"
 #include "bvh_node.h"
@@ -20,11 +21,12 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 {
     float minX, minY, minZ;
     float maxX, maxY, maxZ;
-    minX = minY = minZ = 9999999.99;
-    maxX = maxY = maxZ = -9999999.99;
+    minX = minY = minZ = std::numeric_limits<float>::max();
+    maxX = maxY = maxZ = -std::numeric_limits<float>::max();
 
     unsigned int vid0, vid1, vid2;
-    Vec3f v0, v1, v2;
+    std::vector<Vec3f> vec;
+    vec.reserve(faceIDs->size());
 
     for(unsigned int i = 0; i < faceIDs->size(); i++) {
         int x = faceIDs->operator [](i);
@@ -32,32 +34,31 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
         vid1 = mesh.faces[x * 3 + 1];
         vid2 = mesh.faces[x * 3 + 2];
 
-        v0 = mesh.vertices[vid0];
-        v1 = mesh.vertices[vid1];
-        v2 = mesh.vertices[vid2];
+        vec[0] = mesh.vertices[vid0];
+        vec[1] = mesh.vertices[vid1];
+        vec[2] = mesh.vertices[vid2];
 
-        if(v0[0] < minX || v1[0] < minX || v2[0] < minX) {
-            minX = fmin(v0[0], fmin(v1[0], v2[0]));
-        }
+        for (int i=0; i < 3; i++){
+            if (vec[i][0] < minX){
+                minX = vec[i][0];
+            }
+            if (vec[i][0] > maxX){
+                maxX = vec[i][0];
+            }
 
-        if(v0[1] < minY || v1[1] < minY || v2[1] < minY) {
-            minY = fmin(v0[1], fmin(v1[1], v2[1]));
-        }
+            if (vec[i][1] < minY){
+                minY = vec[i][1];
+            }
+            if (vec[i][1] > maxY){
+                maxY = vec[i][1];
+            }
 
-        if(v0[2] < minZ || v1[2] < minZ || v2[2] < minZ) {
-            minX = fmin(v0[2], fmin(v1[2], v2[2]));
-        }
-
-        if(v0[0] > maxX || v1[0] > maxX || v2[0] > maxX) {
-            maxX = fmax(v0[0], fmax(v1[0], v2[0]));
-        }
-
-        if(v0[1] > maxY || v1[1] >maxY || v2[1] > maxY) {
-            maxY = fmax(v0[1], fmax(v1[1], v2[1]));
-        }
-
-        if(v0[2] > maxZ || v1[2] > maxZ || v2[2] > maxZ) {
-            maxZ = fmax(v0[2], fmax(v1[2], v2[2]));
+            if (vec[i][2] < minZ){
+                minZ = vec[i][2];
+            }
+            if (vec[i][2] > maxZ){
+                maxZ = vec[i][2];
+            }
         }
     }
 
@@ -65,6 +66,69 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
     Vec3f maxI = Vec3f(maxX, maxY, maxZ);
 
     this->aabb = AABB(minI, maxI);
+
+    if (faceIDs->size() <= MAX_LEAF_TRIANGLES){
+        this->triangles.reserve(faceIDs->size());
+        for(unsigned int i = 0; i < faceIDs->size(); i++){
+            unsigned int id = faceIDs->operator [](i);
+            this->triangles[i] = Triangle(&mesh, id);
+        }
+    }
+    else{
+        // Liste mit dreiecken.
+        std::vector<Triangle> allTriangles;
+        allTriangles.reserve(faceIDs->size());
+        for(unsigned int i = 0; i < faceIDs->size(); i++){
+            unsigned int id = faceIDs->operator [](i);
+            allTriangles[i] = Triangle(&mesh, id);
+        }
+
+        // Liste mit Schwerpunkten
+        std::vector<Vec3f> centroids;
+        centroids.reserve(faceIDs->size());
+        for(unsigned int i = 0; i < faceIDs->size(); i++){
+            centroids[i] = allTriangles[i].getCentroid();
+        }
+
+        // BB um die Schwerpunkte
+        minX = minY = minZ = std::numeric_limits<float>::max();
+        maxX = maxY = maxZ = -std::numeric_limits<float>::max();
+        for (int i=0; i < 3; i++){
+            if (centroids[i][0] < minX){
+                minX = centroids[i][0];
+            }
+            if (centroids[i][0] > maxX){
+                maxX = centroids[i][0];
+            }
+
+            if (centroids[i][1] < minY){
+                minY = centroids[i][1];
+            }
+            if (centroids[i][1] > maxY){
+                maxY = centroids[i][1];
+            }
+
+            if (centroids[i][2] < minZ){
+                minZ = centroids[i][2];
+            }
+            if (centroids[i][2] > maxZ){
+                maxZ = centroids[i][2];
+            }
+        }
+        minI = Vec3f(minX, minY, minZ);
+        maxI = Vec3f(maxX, maxY, maxZ);
+
+        AABB centroidsBB = AABB(minI, maxI);
+
+        // Längste Achse der BB
+        unsigned int longestAxis = centroidsBB.getLongestAxis();
+
+        // BB teilen
+        // 2 neuen BB erstellen. damit lässt sich inside() für jeden Punkt prüfen.
+        // liste der faceIDs für links und rechts anlegen
+        // 2 rekursive Aufrufe
+    }
+
 }
 
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
