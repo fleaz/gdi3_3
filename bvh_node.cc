@@ -9,24 +9,27 @@
 
 BVHNode::BVHNode()
 {
-    // TODO
+    this->left = NULL;
+    this->right = NULL;
+    this->triangles.reserve(MAX_LEAF_TRIANGLES);
 }
 
 BVHNode::~BVHNode()
 {
-    // TODO
+    delete this->left;
+    delete this->right;
 }
 
 void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 {
+    std::cout<<"start"<<std::endl;
     float minX, minY, minZ;
     float maxX, maxY, maxZ;
     minX = minY = minZ = std::numeric_limits<float>::max();
     maxX = maxY = maxZ = -std::numeric_limits<float>::max();
-
     unsigned int vid0, vid1, vid2;
     std::vector<Vec3f> vec;
-    vec.reserve(faceIDs->size());
+    vec.reserve(3);
 
     for(unsigned int i = 0; i < faceIDs->size(); i++) {
         int x = faceIDs->operator [](i);
@@ -68,19 +71,18 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
     this->aabb = AABB(minI, maxI);
 
     if (faceIDs->size() <= MAX_LEAF_TRIANGLES){
-        this->triangles.reserve(faceIDs->size());
         for(unsigned int i = 0; i < faceIDs->size(); i++){
-            unsigned int id = faceIDs->operator [](i);
-            this->triangles[i] = Triangle(&mesh, id);
+            this->triangles.push_back(Triangle(&mesh, i));
+            std::cout<<"triangle"<<std::endl;
         }
+        std::cout<<"penis"<<std::endl;
     }
     else{
         // Liste mit dreiecken.
         std::vector<Triangle> allTriangles;
         allTriangles.reserve(faceIDs->size());
         for(unsigned int i = 0; i < faceIDs->size(); i++){
-            unsigned int id = faceIDs->operator [](i);
-            allTriangles[i] = Triangle(&mesh, id);
+            allTriangles.push_back(Triangle(&mesh, i));
         }
 
         // Liste mit Schwerpunkten
@@ -124,15 +126,54 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
         unsigned int longestAxis = centroidsBB.getLongestAxis();
 
         // BB teilen
-        // 2 neuen BB erstellen. damit lässt sich inside() für jeden Punkt prüfen.
         // liste der faceIDs für links und rechts anlegen
+        std::vector<unsigned int> faceLeft, faceRight;
+        faceLeft.reserve(faceIDs->size());
+        faceRight.reserve(faceIDs->size());
+
+        float median = centroidsBB.getAABBMin()[longestAxis] + centroidsBB.getAABBMax()[longestAxis];
+        median = median / 2;
+        //std::cout<<"Longest: "<<longestAxis<<std::endl;
+        //std::cout<<"Min: "<<this->aabb.getAABBMin()[0]<<" "<<this->aabb.getAABBMin()[1]<<" "<<this->aabb.getAABBMin()[2]<<std::endl;
+        //std::cout<<"Max: "<<this->aabb.getAABBMax()[0]<<" "<<this->aabb.getAABBMax()[1]<<" "<<this->aabb.getAABBMax()[2]<<std::endl;
+
+        //std::cout<<"Median: "<<median<<std::endl;
+
+        for(unsigned int i = 0; i < faceIDs->size(); i++){
+            //std::cout<<"Punkt: "<<centroids[i][0]<<" "<<centroids[i][1]<<" "<<centroids[i][2]<<std::endl;
+            if(centroids[i][longestAxis] <= median){
+                faceLeft.push_back(faceIDs->operator [](i));
+                std::cout<<"Links"<<std::endl;
+            }
+            else{
+                faceRight.push_back(faceIDs->operator [](i));
+                std::cout<<"Rechts"<<std::endl;
+            }
+        }
         // 2 rekursive Aufrufe
+        delete this->left;
+        delete this->right;
+        this->left = new BVHNode();
+        this->right = new BVHNode();
+
+
+        std::cout<<"Links: "<<faceLeft.size()<<std::endl;
+        std::cout<<"Rechts: "<<faceRight.size()<<std::endl;
+        std::cout<<"#########################"<<std::endl;
+
+        std::cout<<"Linke Rekursion:"<<std::endl;
+        this->left->insert(mesh, &faceLeft);
+        std::cout<<"Rechte Rekursion:"<<std::endl;
+        this->right->insert(mesh, &faceRight);
+
     }
+
+    return;
 
 }
 
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
 {
-    // TODO
+    // Hier happens the Magic <(O,O)>
     return false;
 }
