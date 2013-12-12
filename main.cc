@@ -48,10 +48,6 @@ void renderImage(BVH const& bvh, std::string const& outImage)
 
             Intersection intersection;
             bvh.intersect(ray, &intersection);
-            if(intersection.distance > 0){
-                //std::cout<<"Distance: "<<intersection.distance<<std::endl;
-            }
-
             image[i] = generateColor(ray, intersection);
         }
 
@@ -108,7 +104,7 @@ int main (int argc, char** argv)
     // The code visualizes the BVH bounding boxes using 3D points.
     // The resulting mesh can be loaded with, for example, Meshlab or UMVE.
     // Warning: On bigger models, the resulting mesh will be huge.
-#if 1
+#if 0
     // Visualize BVH.
     std::cout << "Visualizing BVH..." << std::endl;
     Mesh meshBVH;
