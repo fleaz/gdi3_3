@@ -159,25 +159,18 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
 {
-    //std::cout<<this->triangles.size()<<std::endl;
-    if((this->left == NULL && this->right == NULL) && this->aabb.intersect(ray)){
-        for(unsigned int i=0; i < this->triangles.size();i++){
-            if(this->triangles.operator [](i).intersect(ray, intersection)) {
-                return true;
-                //std::cout<<"bla"<<std::endl;
-               // std::cout<<"inters1: " <<intersection->distance<<std::endl;
-            }
+    if(this->aabb.intersect(ray)) {
+        if(this->left != NULL) {
+            this->left->intersect(ray, intersection);
         }
-    }
-    else if(this->aabb.intersect(ray)){
-        if (this->left->intersect(ray, intersection)) {
-            return true;
+        if(this->right != NULL) {
+            this->right->intersect(ray, intersection);
         }
-        if(this->right->intersect(ray, intersection)) {
-            return true;
+    else if(this->right == NULL && this->left == NULL) {
+        for(unsigned i = 0; i < this->triangles.size(); i++) {
+            this->triangles[i].intersect(ray, intersection);
         }
-    }
-    //std::cout<<"bla"<<std::endl;
-    return false;
-
+      }
+        return true;
+    } else return false;
 }
