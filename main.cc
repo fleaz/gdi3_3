@@ -48,6 +48,10 @@ void renderImage(BVH const& bvh, std::string const& outImage)
 
             Intersection intersection;
             bvh.intersect(ray, &intersection);
+            if(intersection.distance > 0){
+                std::cout<<"Distance: "<<intersection.distance<<std::endl;
+            }
+
             image[i] = generateColor(ray, intersection);
         }
 
@@ -96,7 +100,7 @@ int main (int argc, char** argv)
     std::cout << "Rendering image..." << std::flush;
     {
         ClockTimer timer;
-        renderImage(bvh, outImage);
+        //renderImage(bvh, outImage);
         std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
     }
 

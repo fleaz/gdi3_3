@@ -10,7 +10,7 @@
 // Maximum number of triangles in the leaf nodes.
 // In your implementation, make sure leafs contain at most this many triangles.
 // What is the tradeoff when increasing/decreasing this number?
-#define MAX_LEAF_TRIANGLES 10
+#define MAX_LEAF_TRIANGLES 1
 
 // A single node in the BVH. Every node stores its left and right children
 // or NULL if the node is a leaf. If the node is a leaf, it contains

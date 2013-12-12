@@ -22,7 +22,7 @@ BVHNode::~BVHNode()
 
 void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 {
-    std::cout<<"start"<<std::endl;
+    //std::cout<<"start"<<std::endl;
     float minX, minY, minZ;
     float maxX, maxY, maxZ;
     minX = minY = minZ = std::numeric_limits<float>::max();
@@ -72,10 +72,14 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 
     if (faceIDs->size() <= MAX_LEAF_TRIANGLES){
         for(unsigned int i = 0; i < faceIDs->size(); i++){
-            this->triangles.push_back(Triangle(&mesh, i));
-            std::cout<<"triangle"<<std::endl;
+            unsigned int id = faceIDs->operator [](i);
+            this->triangles.push_back(Triangle(&mesh, id));
+            //std::cout<<"triangle"<<std::endl;
         }
-        std::cout<<"penis"<<std::endl;
+
+        //for(unsigned int i = 0; i < this->triangles->size(); i++){
+
+        //}
     }
     else{
         // Liste mit dreiecken.
@@ -143,11 +147,11 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
             //std::cout<<"Punkt: "<<centroids[i][0]<<" "<<centroids[i][1]<<" "<<centroids[i][2]<<std::endl;
             if(centroids[i][longestAxis] <= median){
                 faceLeft.push_back(faceIDs->operator [](i));
-                std::cout<<"Links"<<std::endl;
+                //std::cout<<"Links"<<std::endl;
             }
             else{
                 faceRight.push_back(faceIDs->operator [](i));
-                std::cout<<"Rechts"<<std::endl;
+                //std::cout<<"Rechts"<<std::endl;
             }
         }
         // 2 rekursive Aufrufe
@@ -157,23 +161,42 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
         this->right = new BVHNode();
 
 
-        std::cout<<"Links: "<<faceLeft.size()<<std::endl;
-        std::cout<<"Rechts: "<<faceRight.size()<<std::endl;
-        std::cout<<"#########################"<<std::endl;
+        //std::cout<<"Links: "<<faceLeft.size()<<std::endl;
+        //std::cout<<"Rechts: "<<faceRight.size()<<std::endl;
+        //std::cout<<"#########################"<<std::endl;
 
-        std::cout<<"Linke Rekursion:"<<std::endl;
+        //std::cout<<"Linke Rekursion:"<<std::endl;
         this->left->insert(mesh, &faceLeft);
-        std::cout<<"Rechte Rekursion:"<<std::endl;
+        //std::cout<<"Rechte Rekursion:"<<std::endl;
         this->right->insert(mesh, &faceRight);
 
     }
-
     return;
-
 }
+
 
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
 {
-    // Hier happens the Magic <(O,O)>
+    if((this->left == NULL && this->right == NULL) && this->aabb.intersect(ray)){
+        //std::cout<<"Triangles: "<<this->triangles.size()<<std::endl;
+        for(unsigned int i=0; i < this->triangles.size();i++){
+            Triangle t = this->triangles[i];
+            t.intersect(ray,intersection);
+        }
+    }
+    else if(this->aabb.intersect(ray)){
+        this->left->intersect(ray, intersection);
+        this->right->intersect(ray, intersection);
+    }
     return false;
+
+    /* std::cout<<"Knoten"<<std::endl;
+    if (this->left == NULL && this->right == NULL){
+        std::cout<<"Blatt"<<std::endl;
+    }
+    else{
+        this->left->intersect(ray,intersection);
+        this->right->intersect(ray,intersection);
+    }
+    return true; */
 }

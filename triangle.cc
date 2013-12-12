@@ -1,4 +1,5 @@
 #include "triangle.h"
+#include <iostream>
 
 Vec3f Triangle::getCentroid() const
 {
@@ -83,6 +84,7 @@ bool Triangle::intersect(Ray const& ray, Intersection* intersection) const
     float const distance = (intersectionPoint - ray.position).length();
     if (intersection->distance > distance)
     {
+        //std::cout<<"Distance: "<<distance<<std::endl;
         intersection->position = intersectionPoint;
         intersection->normal = this->getNormalVector();
         intersection->distance = distance;
