@@ -94,7 +94,7 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
         // BB um die Schwerpunkte
         minX = minY = minZ = std::numeric_limits<float>::max();
         maxX = maxY = maxZ = -std::numeric_limits<float>::max();
-        for (int i=0; i < 3; i++){
+        for (unsigned int i=0; i < faceIDs->size(); i++){
             if (centroids[i][0] < minX){
                 minX = centroids[i][0];
             }
@@ -143,8 +143,6 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
             }
         }
         // 2 rekursive Aufrufe
-        delete this->left;
-        delete this->right;
         this->left = new BVHNode();
         this->right = new BVHNode();
 
@@ -160,17 +158,15 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
 {
     if(this->aabb.intersect(ray)) {
-        if(this->left != NULL) {
-            this->left->intersect(ray, intersection);
+        if(this->left != NULL && this->right != NULL) {
+                this->left->intersect(ray, intersection);
+                this->right->intersect(ray, intersection);
         }
-        if(this->right != NULL) {
-            this->right->intersect(ray, intersection);
+        else if(this->right == NULL && this->left == NULL) {
+            for(unsigned i = 0; i < this->triangles.size(); i++) {
+                this->triangles[i].intersect(ray, intersection);
+            }
         }
-    else if(this->right == NULL && this->left == NULL) {
-        for(unsigned i = 0; i < this->triangles.size(); i++) {
-            this->triangles[i].intersect(ray, intersection);
-        }
-      }
         return true;
     } else return false;
 }
