@@ -37,8 +37,7 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
             this->triangles.push_back(Triangle(&mesh, id));
         }
         return;
-    }
-    else{
+    } else {
          // Längste Achse der BB
         unsigned int longestAxis = centroidsBB.getLongestAxis();
 
@@ -89,8 +88,6 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
         this->left = new BVHNode();
         this->right = new BVHNode();
 
-        std::cout<<faceLeft.size()<<" - "<<faceRight.size()<<std::endl;
-
         this->left->insert(mesh, &faceLeft);
         this->right->insert(mesh, &faceRight);
 
@@ -100,6 +97,10 @@ void BVHNode::insert(Mesh const& mesh, std::vector<unsigned int>* faceIDs)
 }
 
 
+/*
+  * Überprüft eine bvh nach intersections der jeweiligen bounding boxes
+  * beginnend beim jeweiligen BVH_node
+  */
 bool BVHNode::intersect(Ray const& ray, Intersection* intersection) const
 {
     if(this->aabb.intersect(ray)) {
